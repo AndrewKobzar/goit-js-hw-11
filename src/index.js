@@ -9,6 +9,7 @@ const gallery = document.querySelector('.gallery');
 const clear = elems => [...elems.children].forEach(div => div.remove());
 const loadBtn = document.querySelector('.load-more');
 const lightbox = () => new SimpleLightbox('.gallery a', {});
+
 let perPage = 40;
 let page = 0;
 let name = searchQuery.value;
@@ -20,50 +21,41 @@ async function fetchImages(name, page) {
     const response = await axios.get(
       `https://pixabay.com/api/?key=23580980-4f75151f85975025bb6074227&q=${name}&image_type=photo&orientation=horizontal&safesearch=true&page=${page}&per_page=${perPage}`
     );
-    console.log(response);
     return response.data;
   } catch (error) {
-    console.log(error);
+    Notiflix.Notify.failure(error);
   }
 }
 
-async function eventHandler(ev) {
-  ev.preventDefault();
+async function eventHandler(e) {
+  e.preventDefault();
   clear(gallery);
   loadBtn.style.display = 'none';
   page = 1;
   name = searchQuery.value;
-    console.log(name);
-  fetchImages(name, page)
-    .then(name => {
-      console.log(`Number of arrays: ${name.hits.length}`);
-      console.log(`Total hits: ${name.totalHits}`);
-      let totalPages = Math.ceil(name.totalHits / perPage);
-      console.log(`Total pages: ${totalPages}`);
+  fetchImages(name, page).then(name => {
+    let totalPages = Math.ceil(name.totalHits / perPage);
 
-      if (name.hits.length > 0) {
-        Notiflix.Notify.success(`Hooray! We found ${name.totalHits} images.`);
-        renderGallery(name);
-        console.log(`Current page: ${page}`);
-          lightbox();
-          searchQuery.value = ''; 
-        if (page < totalPages) {
-          loadBtn.style.display = 'block';
-        } else {
-          loadBtn.style.display = 'none';
-          console.log('There are no more images');
-          Notiflix.Notify.info(
-            "We're sorry, but you've reached the end of search results."
-          );
-        }
+    if (name.hits.length > 0) {
+      Notiflix.Notify.success(`Hooray! We found ${name.totalHits} images.`);
+      renderGallery(name);
+      lightbox();
+      searchQuery.value = '';
+      if (page < totalPages) {
+        loadBtn.style.display = 'block';
       } else {
-        Notiflix.Notify.failure(
-          'Sorry, there are no images matching your search query. Please try again.'
+        loadBtn.style.display = 'none';
+        Notiflix.Notify.info(
+          "We're sorry, but you've reached the end of search results."
         );
-        clear(gallery);
       }
-    })
-    .catch(error => console.log(error));
+    } else {
+      Notiflix.Notify.failure(
+        'Sorry, there are no images matching your search query. Please try again.'
+      );
+      clear(gallery);
+    }
+  });
 }
 
 searchForm.addEventListener('submit', eventHandler);
@@ -99,7 +91,6 @@ loadBtn.addEventListener(
   'click',
   () => {
     name = searchQuery.value;
-    console.log('load more images');
     page += 1;
     fetchImages(name, page).then(name => {
       let totalPages = Math.ceil(name.totalHits / perPage);
@@ -113,11 +104,9 @@ loadBtn.addEventListener(
         behavior: 'smooth',
       });
       lightbox().refresh();
-      console.log(`Current page: ${page}`);
 
       if (page >= totalPages) {
         loadBtn.style.display = 'none';
-        console.log('There are no more images');
         Notiflix.Notify.info(
           "We're sorry, but you've reached the end of search results."
         );
